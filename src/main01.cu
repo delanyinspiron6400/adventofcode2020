@@ -7,7 +7,7 @@
 
 int main()
 {
-	std::cout << "First of Advent code!" << std::endl;
+	std::cout << "First day of Advent code!" << std::endl;
 	std::fstream input("../../../data/01/input.txt", std::ios_base::in);
 	if (!input.is_open())
 	{

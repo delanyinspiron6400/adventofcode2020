@@ -39,5 +39,16 @@ else()
    target_compile_options(main_02 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
 endif()
 
-set_target_properties(main_01 main_02
+##########################################################################
+# Day 03
+add_executable(main_03
+ src/main03.cpp)
+set_property(TARGET main_03 PROPERTY CUDA_ARCHITECTURES OFF)
+if (MSVC)
+   target_compile_options(main_03 PRIVATE /W4 $<$<CONFIG:RELEASE>:/O2> $<$<CONFIG:DEBUG>:/Od>)
+else()
+   target_compile_options(main_03 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
+endif()
+
+set_target_properties(main_01 main_02 main_03
                       PROPERTIES CXX_STANDARD 20)

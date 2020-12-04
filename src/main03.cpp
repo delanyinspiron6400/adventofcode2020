@@ -43,7 +43,7 @@ int main()
 					++num_trees;
 			}
 		}
-		std::cout << "Num Tress for TC<" << row_stride << "|" << column_stride << "> is: " << num_trees << std::endl;
+		std::cout << "Num Trees for TC<" << row_stride << "|" << column_stride << "> is: " << num_trees << std::endl;
 		return num_trees;
 	};
 

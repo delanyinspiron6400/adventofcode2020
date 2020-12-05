@@ -3,7 +3,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "Timer.cuh"
+//#include "Timer.cuh"
 
 int main()
 {
@@ -21,7 +21,7 @@ int main()
 		input_data.push_back(val);
 	}
 
-	CPUTimer cpu_timer;
+	//CPUTimer cpu_timer;
 	int num_iterations{ 1 };
 
 	// CPU version

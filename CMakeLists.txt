@@ -68,5 +68,15 @@ else()
    target_compile_options(main_05 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
 endif()
 
-set_target_properties(main_01 main_02 main_03 main_04 main_05
+##########################################################################
+# Day 06
+add_executable(main_06
+ src/main06.cpp)
+if (MSVC)
+   target_compile_options(main_06 PRIVATE /W4 $<$<CONFIG:RELEASE>:/O2> $<$<CONFIG:DEBUG>:/Od>)
+else()
+   target_compile_options(main_06 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
+endif()
+
+set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06
                       PROPERTIES CXX_STANDARD 20)

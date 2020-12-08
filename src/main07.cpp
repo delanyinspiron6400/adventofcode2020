@@ -63,7 +63,7 @@ int searchContentOfBag(const std::string& search_string, const std::vector<Rule>
 
 int main()
 {
-	std::cout << "Sixth day of Advent code!" << std::endl;
+	std::cout << "Seventh day of Advent code!" << std::endl;
 	std::fstream input("../../../data/07/input.txt", std::ios_base::in);
 	if (!input.is_open())
 	{

@@ -95,7 +95,6 @@ int main()
 	}
 
 	std::vector<bool> instruction_cache(input_data.size());
-	int instruction_pointer{ 0 };
 
 	// First task
 	int accumulator{ 0 };

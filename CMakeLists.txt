@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(adventofcode LANGUAGES CXX VERSION 1.0)
 
-set(CUDA_ARCH 70)
-
 ##########################################################################
 # Include Directories
 include_directories(include)
@@ -99,7 +97,7 @@ else()
 endif()
 
 ##########################################################################
-# Day 08
+# Day 09
 add_executable(main_09
  src/main09.cpp)
 if (MSVC)
@@ -108,5 +106,15 @@ else()
    target_compile_options(main_09 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
 endif()
 
-set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09
+##########################################################################
+# Day 10
+add_executable(main_10
+ src/main10.cpp)
+if (MSVC)
+   target_compile_options(main_10 PRIVATE /W4 $<$<CONFIG:RELEASE>:/O2> $<$<CONFIG:DEBUG>:/Od>)
+else()
+   target_compile_options(main_10 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
+endif()
+
+set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10
                       PROPERTIES CXX_STANDARD 20)

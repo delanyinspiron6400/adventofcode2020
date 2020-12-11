@@ -7,9 +7,7 @@ include_directories(include)
 
 ##########################################################################
 # Compile Flags
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+
 
 add_compile_definitions(
         $<$<CONFIG:RELEASE>:NDEBUG>
@@ -116,5 +114,15 @@ else()
    target_compile_options(main_10 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
 endif()
 
-set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10
+##########################################################################
+# Day 11
+add_executable(main_11
+ src/main11.cpp)
+if (MSVC)
+   target_compile_options(main_11 PRIVATE /W4 $<$<CONFIG:RELEASE>:/O2> $<$<CONFIG:DEBUG>:/Od>)
+else()
+   target_compile_options(main_11 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
+endif()
+
+set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11
                       PROPERTIES CXX_STANDARD 20)

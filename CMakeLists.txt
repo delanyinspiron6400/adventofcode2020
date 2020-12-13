@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-project(adventofcode LANGUAGES CXX VERSION 1.0)
+project(adventofcode LANGUAGES CXX CUDA VERSION 1.0)
 
 ##########################################################################
 # Include Directories
 include_directories(include)
+include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
+find_package(CUDAToolkit REQUIRED)
 
 ##########################################################################
 # Compile Flags
@@ -134,5 +137,15 @@ else()
    target_compile_options(main_12 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
 endif()
 
-set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11 main_12
+##########################################################################
+# Day 13
+add_executable(main_13
+ src/main13.cu)
+set_property(TARGET main_13 PROPERTY CUDA_ARCHITECTURES 70)
+target_compile_options(main_13 PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --resource-usage --ptxas-options=-v -lineinfo $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>>)
+if (CUDA_BUILD_DEBUG)
+	target_compile_options(main_13 PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G>)
+endif ()
+
+set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11 main_12 main_13
                       PROPERTIES CXX_STANDARD 20)

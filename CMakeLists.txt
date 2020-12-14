@@ -147,5 +147,15 @@ if (CUDA_BUILD_DEBUG)
 	target_compile_options(main_13 PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G>)
 endif ()
 
-set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11 main_12 main_13
+##########################################################################
+# Day 14
+add_executable(main_14
+ src/main14.cpp)
+if (MSVC)
+   target_compile_options(main_14 PRIVATE /W4 $<$<CONFIG:RELEASE>:/O2> $<$<CONFIG:DEBUG>:/Od>)
+else()
+   target_compile_options(main_14 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
+endif()
+
+set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11 main_12 main_13 main_14
                       PROPERTIES CXX_STANDARD 20)

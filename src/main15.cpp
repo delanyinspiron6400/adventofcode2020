@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
-#include <map>
+#include <unordered_map>
+
+#include "Timer.cuh"
 
 int main()
 {
@@ -25,9 +27,12 @@ int main()
 
 	std::cout << "Num is: " << input[2019] << std::endl;
 
+	CPUTimer timer;
+	timer.start_clock();
+
 	//Task 2
 	// Lets switch the data structure for better speed
-	std::map<int, int>input_map{ {12, 0}, { 1,1 }, { 16,2 }, { 3,3 }, { 11,4 }};
+	std::unordered_map<int, int>input_map{ {12, 0}, { 1,1 }, { 16,2 }, { 3,3 }, { 11,4 }};
 	int distance{ 0 };
 	int current_element{ 0 };
 	for (int i = input_map.size(); i < 30000000 - 1; ++i)
@@ -45,6 +50,7 @@ int main()
 		}
 		current_element = distance;
 	}
-	std::cout << "Num is: " << distance << std::endl;
+	float timing = timer.end_clock();
+	std::cout << "Num is: " << distance << " in " << timing << " ms" << std::endl;
 	return 0;
 }

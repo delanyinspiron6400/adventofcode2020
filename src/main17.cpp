@@ -6,6 +6,8 @@
 #include <bitset>
 #include <unordered_map>
 
+#include "Timer.cuh"
+
 struct Extent
 {
 	void checkOddSize()
@@ -388,7 +390,6 @@ int main()
 	Extent extent{ static_cast<int>(input_data[0].length()), static_cast<int>(input_data.size()) , 1 };
 	extent.checkOddSize();
 	Extent string_extent = extent;
-	std::cout << "Current extent is: " << extent.x << " | " << extent.y << " | " << extent.z << std::endl;
 
 	// Task 1 
 	static constexpr int rounds{ 6 };
@@ -396,7 +397,6 @@ int main()
 	{
 		extent += 2;
 	}
-	std::cout << "Current extent is: " << extent.x << " | " << extent.y << " | " << extent.z << std::endl;
 
 	Grid3D grid{ extent };
 	Grid3D next_grid{ extent };
@@ -415,14 +415,17 @@ int main()
 	}
 
 	// Build stuff
+	CPUTimer timer;
+	timer.start_clock();
 	for (auto i = 0; i < rounds; ++i)
 	{
 		grid.checkNeighbourhoodPerCube(next_grid);
 		swap(grid, next_grid);
 		next_grid.flushGrid();
 	}
+	auto timing = timer.end_clock();
 
-	std::cout << "Number of active cubes is: " << grid.countActiveCubes() << std::endl;
+	std::cout << "Number of active cubes is: " << grid.countActiveCubes() << " in " << timing << "ms" << std::endl;
 
 	// Task 2
 	Grid4D grid4D{ extent };
@@ -440,15 +443,16 @@ int main()
 	}
 
 	//grid4D.printGrid();
-
+	timer.start_clock();
 	for (auto i = 0; i < rounds; ++i)
 	{
 		grid4D.checkNeighbourhoodPerCube(next_grid4D);
 		swap(grid4D, next_grid4D);
 		next_grid4D.flushGrid();
 	}
+	timing = timer.end_clock();
 
-	std::cout << "Number of active cubes is: " << grid4D.countActiveCubes() << std::endl;
+	std::cout << "Number of active cubes is: " << grid4D.countActiveCubes() << " in " << timing << "ms" << std::endl;
 
 	return 0;
 }

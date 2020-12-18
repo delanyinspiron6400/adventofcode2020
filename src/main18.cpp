@@ -10,7 +10,7 @@
 #include <stack>
 #include <numeric>
 
-using DataType = unsigned int;
+using DataType = unsigned long long;
 
 std::function<DataType(DataType, DataType)> Addition = [&](DataType a, DataType b) -> DataType {return a + b; };
 std::function<DataType(DataType, DataType)> Multiplication = [&](DataType a, DataType b) -> DataType {return a * b; };
@@ -20,7 +20,6 @@ int findClosingBracket(const std::string& input)
 {
 	if (input[0] != '(')
 	{
-		std::cout << "There is no opening bracket" << std::endl;
 		return std::numeric_limits<int>::max();
 	}
 
@@ -42,7 +41,6 @@ int findClosingBracket(const std::string& input)
 		}
 	}
 
-	std::cout << "Found no closing bracket" << std::endl;
 	return std::numeric_limits<int>::max();
 }
 
@@ -54,7 +52,6 @@ struct Operand
 	void processInput(std::string&& input)
 	{
 		val = std::numeric_limits<DataType>::max();
-		//std::cout << "We got: " << input << std::endl;
 		std::function<DataType(DataType, DataType)> op{ Noop };
 		Operand operand{ std::numeric_limits<DataType>::max() };
 
@@ -64,6 +61,7 @@ struct Operand
 		{
 			// Find closing bracket
 			position = findClosingBracket(input);
+			operand.val = std::numeric_limits<DataType>::max();
 			operand.processInput(std::move(input.substr(1, position - 1)));
 		}
 		else
@@ -74,7 +72,6 @@ struct Operand
 			ss >> operand.val;
 		}
 		input = input.substr(position + 2);
-		//std::cout << "Rest of line is: " << input << std::endl;
 
 		// First instruction
 		instructions.push_back(std::make_pair(operand, op));
@@ -82,52 +79,37 @@ struct Operand
 		// Parse line (we always get operand first)
 		while (true)
 		{
+			Operand operand2{ std::numeric_limits<DataType>::max() };
 			position = 0;
+			// We get an operator first
+			if (input.at(0) == '+')
+			{
+				op = Addition;
+			}
+			else if (input.at(0) == '*')
+			{
+				op = Multiplication;
+			}
+			input = input.substr(2);
 			if (input.at(0) == '(')
 			{
 				// Find closing bracket
 				position = findClosingBracket(input);
-				operand.processInput(std::move(input.substr(1, position - 1)));
+				operand2.val = std::numeric_limits<DataType>::max();
+				operand2.processInput(std::move(input.substr(1, position - 1)));
 			}
 			else
 			{
-				// We get an operator first
-				if (input.at(0) == '+')
-				{
-					op = Addition;
-				}
-				else if (input.at(0) == '*')
-				{
-					op = Multiplication;
-				}
-				input = input.substr(2);
-				if (input.at(0) == '(')
-				{
-					// Find closing bracket
-					position = findClosingBracket(input);
-					operand.processInput(std::move(input.substr(1, position - 1)));
-				}
-				else
-				{
-					std::stringstream ss;
-					ss << input.at(0);
-					ss >> operand.val;
-				}
+				std::stringstream ss;
+				ss << input.at(0);
+				ss >> operand2.val;
 			}
 
-			instructions.push_back(std::make_pair(operand, op));
-			//std::cout << "Remaining string: " << input;
+			instructions.push_back(std::make_pair(operand2, op));
 			if (input.size() > position + 2)
-			{
 				input = input.substr(position + 2);
-				//std::cout << " | Cut to: " << input << std::endl;
-			}
 			else
-			{
-				//std::cout << std::endl;
 				break;
-			}
-				
 		}
 	}
 
@@ -136,18 +118,53 @@ struct Operand
 		if (val == std::numeric_limits<DataType>::max())
 		{
 			DataType result{ 0 };
-			std::cout << "Num instructions: " << instructions.size() << std::endl;
 			for (auto& [operand, operation] : instructions)
 			{
 				result = operation(result, operand.get());
-				std::cout << "Curr result: " << result << std::endl;
 			}
-			std::cout << "Sum Result is: " << result << std::endl;
 			return result;
 		}
 		else
 		{
-			std::cout << "Val Result is: " << val << std::endl;
+			return val;
+		}
+	}
+
+	DataType get2(const std::string& prefix = "", bool printOutput=true)
+	{
+		if (val == std::numeric_limits<DataType>::max())
+		{
+			std::vector<std::pair<Operand, std::function<DataType(DataType, DataType)>>> tmp_inst;
+			DataType result{ 0 };
+			bool first_split{ true };
+			for (auto& [operand, operation] : instructions)
+			{
+				if (operation(2, 3) == 6)
+				{
+					// Multiplication
+					tmp_inst.push_back(std::make_pair(Operand{ result }, first_split ? Noop : Multiplication));
+					result = operand.get2(prefix + std::string("-------- "), false);
+					first_split = false;
+				}
+				else
+				{
+					// Addition or Noop
+					result = operation(result, operand.get2(prefix + std::string("-------- ")));
+				}
+			}
+			// Push last instruction
+			if(result)
+				tmp_inst.push_back(std::make_pair(Operand{ result }, (tmp_inst.size()) ? Multiplication : Noop));
+
+			result = 0;
+			for (auto& [operand, operation] : tmp_inst)
+			{
+				result = operation(result, operand.get2(prefix + std::string("-------- ")));
+			}
+			return result;
+		}
+		else
+		{
 			return val;
 		}
 	}
@@ -165,94 +182,29 @@ struct Calculations
 		instructions.reserve(input_str.size());
 		for (auto& line : input_str)
 		{
-			// Create a new instruction
-			std::vector<std::pair<Operand, std::function<DataType(DataType, DataType)>>> inst;
-			std::function<DataType(DataType, DataType)> op{ Noop };
-			Operand operand{ std::numeric_limits<DataType>::max() };
-			
-			// First op is a bit different
-			auto position{ 0 };
-			if (line.at(0) == '(')
-			{
-				// Find closing bracket
-				position = findClosingBracket(line);
-				operand.processInput(std::move(line.substr(1, position - 1)));
-			}
-			else
-			{
-				// We get a number
-				std::stringstream ss;
-				ss << line.at(0);
-				ss >> operand.val;
-			}
-			line = line.substr(position + 2);
-			//std::cout << "*Rest of line is: " << line << std::endl;
-
-			// First instruction
-			inst.push_back(std::make_pair(operand, op));
-
-			// Parse line (we always get operand first)
-			while (true)
-			{
-				position = 0;
-				if (line.at(0) == '(')
-				{
-					// Find closing bracket
-					position = findClosingBracket(line);
-					operand.processInput(std::move(line.substr(1, position - 1)));
-				}
-				else
-				{
-					// We get an operator first
-					if (line.at(0) == '+')
-					{
-						op = Addition;
-					}
-					else if (line.at(0) == '*')
-					{
-						op = Multiplication;
-					}
-					line = line.substr(2);
-					if (line.at(0) == '(')
-					{
-						// Find closing bracket
-						position = findClosingBracket(line);
-						operand.processInput(std::move(line.substr(1, position - 1)));
-					}
-					else
-					{
-						std::stringstream ss;
-						ss << line.at(0);
-						ss >> operand.val;
-					}
-				}
-				
-				inst.push_back(std::make_pair(operand, op));
-				
-				if (line.size() > position + 2)
-					line = line.substr(position + 2);
-				else
-					break;
-			}
-
-			instructions.push_back(std::move(inst));
+			Operand op{std::numeric_limits<DataType>::max()};
+			op.processInput(std::move(line));
+			instructions.push_back(std::move(op));
 		}
 	}
 
 	void calculateOutput()
 	{
-		for (auto& instruction : instructions)
+		results.resize(instructions.size());
+		memset(results.data(), 0, sizeof(DataType) * results.size());
+		for (int index = 0; auto & instruction : instructions)
 		{
-			DataType result{ 0 };
-			std::cout << "Num instructions: " << instruction.size() << std::endl;
-			for (auto& [operand, operation] : instruction)
-			{
-				result = operation(result, operand.get());
-				std::cout << "Current result: " << result << std::endl;
-			}
-			std::cout << "Final Result is: " << result << std::endl;
-			std::cout << "-----------------------------" << std::endl;
-			results.push_back(result);
+			results[index++] = instruction.get();
+		}
+	}
+
+	void calculateOutput2()
+	{
+		results.resize(instructions.size());
+		memset(results.data(), 0, sizeof(DataType) * results.size());
+		for (int index = 0; auto& instruction : instructions)
+		{
+			results[index++] = instruction.get2();
 		}
 	}
 
@@ -265,7 +217,7 @@ struct Calculations
 	}
 
 	std::vector<std::string> input_str;
-	std::vector<std::vector<std::pair<Operand, std::function<DataType(DataType, DataType)>>>> instructions;
+	std::vector<Operand> instructions;
 	std::vector<DataType> results;
 };
 
@@ -294,6 +246,10 @@ int main()
 	// Task 1
 	calc.calculateOutput();
 	std::cout << "Task1 Output is: " << calc.sumOutput() << std::endl;
+
+	// Task 2
+	calc.calculateOutput2();
+	std::cout << "Task2 Output is: " << calc.sumOutput() << std::endl;
 
 	return 0;
 }

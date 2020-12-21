@@ -5,11 +5,16 @@
 #include <bitset>
 #include <map>
 
+static constexpr int NumTiles{ 3 };
+
 static constexpr int TileDim{ 10 };
-static constexpr int ImageDim{ 3 };
-static constexpr int numPermTile{ 16 };
-using ImageRow = std::bitset<TileDim>;
-using ImageState = std::bitset< ImageDim * ImageDim>;
+static constexpr int TileDim_nb{ 8 };
+static constexpr int ImageSize{ TileDim_nb * NumTiles };
+static constexpr int numPermTile{ 8 };
+using TileRow = std::bitset<TileDim>;
+using ImageRow = std::bitset<ImageSize>;
+using ImageState = std::bitset< NumTiles * NumTiles>;
+
 
 enum class BorderLoc : int
 {
@@ -19,172 +24,152 @@ enum class BorderLoc : int
 	LEFT = 3
 };
 
-enum class RotationState : int
-{
-	None = 0,
-	Deg90 = 1,
-	Deg180 = 2,
-	Deg270 = 3
-};
-
-enum class FlipState : int
-{
-	None = 0,
-	Horizontal = 1,
-	Vertical = 2,
-	Both = 3
-};
-
 struct ImageTile
 {
-	std::vector<ImageRow> rotateBorder(const std::vector<ImageRow>& border)
+	std::vector<TileRow> rotateImage(const std::vector<TileRow>& image)
 	{
-		std::vector<ImageRow> new_border;
-		new_border.push_back(border[3]);
-		new_border.push_back(border[0]);
-		new_border.push_back(border[1]);
-		new_border.push_back(border[2]);
-		return new_border;
+		std::vector<TileRow> new_image;
+		new_image.resize(image.size());
+		for (auto i = 0; i < TileDim; ++i)
+		{
+			for (auto j = 0; j < TileDim; ++j)
+			{
+				new_image[i][j] = image[j][TileDim - 1 - i];
+			}
+		}
+		return new_image;
 	}
 
-	std::vector<ImageRow> flipBorderVertical(const std::vector<ImageRow>& border)
+	std::vector<TileRow> rotateImageLeft(const std::vector<TileRow>& image)
 	{
-		std::vector<ImageRow> new_border;
-		
-		// Bottom becomes top
-		new_border.push_back(border[2]);
-
-		ImageRow right_border;
+		std::vector<TileRow> new_image;
+		new_image.resize(image.size());
 		for (auto i = 0; i < TileDim; ++i)
 		{
-			if (border[1].test(TileDim - 1 - i))
-				right_border.set(i);
-			else
-				right_border.reset(i);
+			for (auto j = 0; j < TileDim; ++j)
+			{
+				new_image[i][j] = image[TileDim - 1 - j][i];
+			}
 		}
-		new_border.push_back(std::move(right_border));
-
-		// Top becomes bottom
-		new_border.push_back(border[0]);
-
-		ImageRow left_border;
-		for (auto i = 0; i < TileDim; ++i)
-		{
-			if (border[3].test(TileDim - 1 - i))
-				left_border.set(i);
-			else
-				left_border.reset(i);
-		}
-		new_border.push_back(std::move(left_border));
-
-		return new_border;
+		return new_image;
 	}
 
-	std::vector<ImageRow> flipBorderHorizontal(const std::vector<ImageRow>& border)
+	std::vector<TileRow> flipImageHorizontal(const std::vector<TileRow>& image)
 	{
-		std::vector<ImageRow> new_border;
-
-		ImageRow top_border;
+		std::vector<TileRow> new_image;
+		new_image.resize(image.size());
 		for (auto i = 0; i < TileDim; ++i)
 		{
-			if (border[0].test(TileDim - 1 - i))
-				top_border.set(i);
-			else
-				top_border.reset(i);
+			new_image[i] = image[TileDim - 1 - i];
 		}
-		new_border.push_back(std::move(top_border));
-
-		// Top becomes bottom
-		new_border.push_back(border[3]);
-
-		ImageRow bottom_border;
-		for (auto i = 0; i < TileDim; ++i)
-		{
-			if (border[2].test(TileDim - 1 - i))
-				bottom_border.set(i);
-			else
-				bottom_border.reset(i);
-		}
-		new_border.push_back(std::move(bottom_border));
-
-		// Bottom becomes top
-		new_border.push_back(border[1]);
-
-		return new_border;
+		return new_image;
 	}
-	
-	void generateMetaData()
+
+	std::vector<TileRow> flipImageVertical(const std::vector<TileRow>& image)
 	{
-		std::vector<ImageRow> active_border;
+		std::vector<TileRow> new_image;
+		new_image.resize(image.size());
+		for (auto i = 0; i < TileDim; ++i)
+		{
+			for (auto j = 0; j < TileDim; ++j)
+			{
+				new_image[i][j] = image[i][TileDim - 1 - j];
+			}
+		}
+		return new_image;
+	}
+
+	std::vector<TileRow> getBorder(const std::vector<TileRow>& image)
+	{
+		std::vector<TileRow> active_border;
 		// Top Border
-		active_border.push_back(data[0]);
+		active_border.push_back(image[0]);
 
 		// Right Border
-		ImageRow right_border;
+		TileRow right_border;
 		for (auto i = 0; i < TileDim; ++i)
-			if (data[i].test(0))
+			if (image[i].test(0))
 				right_border.set(i);
 		active_border.push_back(std::move(right_border));
 
 		// Bottom Border
-		active_border.push_back(data[TileDim - 1]);
+		active_border.push_back(image[TileDim - 1]);
 
 		// Left Border
-		ImageRow left_border;
+		TileRow left_border;
 		for (auto i = 0; i < TileDim; ++i)
-			if (data[i].test(TileDim - 1))
+			if (image[i].test(TileDim - 1))
 				left_border.set(i);
 		active_border.push_back(std::move(left_border));
+		return active_border;
+	}
 
-		// No rotation
-		borders.push_back(active_border);
-		auto tmp_flip_vert = flipBorderVertical(active_border);
-		borders.push_back(tmp_flip_vert);
-		borders.push_back(std::move(flipBorderHorizontal(active_border)));
-		borders.push_back(std::move(flipBorderHorizontal(tmp_flip_vert)));
+	void generateMetaData()
+	{
+		// Normal orientation
+		images.push_back(data);
+		borders.push_back(std::move(getBorder(data)));
 
-		// 90° rotation
-		auto border_90deg = rotateBorder(active_border);
-		borders.push_back(border_90deg);
-		tmp_flip_vert = flipBorderVertical(border_90deg);
-		borders.push_back(tmp_flip_vert);
-		borders.push_back(std::move(flipBorderHorizontal(border_90deg)));
-		borders.push_back(std::move(flipBorderHorizontal(tmp_flip_vert)));
+		// Rotate 90Deg
+		auto image_90 = rotateImage(data);
+		images.push_back(image_90);
+		borders.push_back(std::move(getBorder(image_90)));
 
-		// 180° rotation
-		auto border_180deg = rotateBorder(border_90deg);
-		borders.push_back(border_180deg);
-		tmp_flip_vert = flipBorderVertical(border_180deg);
-		borders.push_back(tmp_flip_vert);
-		borders.push_back(std::move(flipBorderHorizontal(border_180deg)));
-		borders.push_back(std::move(flipBorderHorizontal(tmp_flip_vert)));
+		// Rotate 180Deg
+		auto image_180 = rotateImage(image_90);
+		images.push_back(image_180);
+		borders.push_back(std::move(getBorder(image_180)));
 
-		// 270° rotation
-		auto border_270deg = rotateBorder(border_180deg);
-		borders.push_back(border_270deg);
-		tmp_flip_vert = flipBorderVertical(border_270deg);
-		borders.push_back(tmp_flip_vert);
-		borders.push_back(std::move(flipBorderHorizontal(border_270deg)));
-		borders.push_back(std::move(flipBorderHorizontal(tmp_flip_vert)));
+		// Rotate 270Deg
+		auto image_270 = rotateImage(image_180);
+		images.push_back(image_270);
+		borders.push_back(std::move(getBorder(image_270)));
+
+		// Flip horizontal
+		auto flip_hor = flipImageHorizontal(data);
+		images.push_back(flip_hor);
+		borders.push_back(std::move(getBorder(flip_hor)));
+
+		// Flip vertical
+		auto flip_vert = flipImageVertical(data);
+		images.push_back(flip_vert);
+		borders.push_back(std::move(getBorder(flip_vert)));
+
+		// Flip +45°
+		auto flip_plus_45 = rotateImageLeft(flip_hor);
+		images.push_back(flip_plus_45);
+		borders.push_back(std::move(getBorder(flip_plus_45)));
+
+		// Flip -45°
+		auto flip_minus_45 = rotateImage(flip_hor);
+		images.push_back(flip_minus_45);
+		borders.push_back(std::move(getBorder(flip_minus_45)));
+	}
+
+	void printTile(const std::vector<TileRow>& tile)
+	{
+		for (auto& row : tile)
+		{
+			std::cout << row << std::endl;
+		}
 	}
 
 	// Members
 	int tile_ID{ 0 };
-	int active_border_offset{ 0 };
-	RotationState rotation_state;
-	FlipState flip_state;
-	std::vector<ImageRow> data;
-	std::vector<std::vector<ImageRow>> borders; // Top -> Right -> Bottom -> Left per border
+	int active_offset{ 0 };
+	std::vector<TileRow> data;
+	std::vector<std::vector<TileRow>> borders; // Top -> Right -> Bottom -> Left per border
+	std::vector<std::vector<TileRow>> images;
 };
 
 struct ImageGrid
 {
 	ImageGrid()
 	{
-		for (auto i = 0; i < ImageDim; ++i)
+		for (auto i = 0; i < NumTiles; ++i)
 		{
 			std::vector<ImageTile> tiles;
-			tiles.resize(ImageDim);
+			tiles.resize(NumTiles);
 			data.push_back(std::move(tiles));
 		}
 	}
@@ -195,15 +180,15 @@ struct ImageGrid
 		if (row > 0)
 		{
 			// Check also towards top
-			auto& top_border_incoming = tile.borders[tile.active_border_offset][static_cast<int>(BorderLoc::TOP)];
-			auto& bottom_border_present = data[row - 1][col].borders[data[row - 1][col].active_border_offset][static_cast<int>(BorderLoc::BOTTOM)];
+			auto& top_border_incoming = tile.borders[tile.active_offset][static_cast<int>(BorderLoc::TOP)];
+			auto& bottom_border_present = data[row - 1][col].borders[data[row - 1][col].active_offset][static_cast<int>(BorderLoc::BOTTOM)];
 			it_fits = (top_border_incoming == bottom_border_present);
 		}
 		if (it_fits && col > 0)
 		{
 			// Check to the left
-			auto& left_border_incoming = tile.borders[tile.active_border_offset][static_cast<int>(BorderLoc::LEFT)];
-			auto& right_border_present = data[row][col - 1].borders[data[row][col - 1].active_border_offset][static_cast<int>(BorderLoc::RIGHT)];
+			auto& left_border_incoming = tile.borders[tile.active_offset][static_cast<int>(BorderLoc::LEFT)];
+			auto& right_border_present = data[row][col - 1].borders[data[row][col - 1].active_offset][static_cast<int>(BorderLoc::RIGHT)];
 			it_fits = (left_border_incoming == right_border_present);
 		}
 		return it_fits;
@@ -211,16 +196,16 @@ struct ImageGrid
 
 	void receiveInput(ImageTile&& tile)
 	{
-		int row = size / ImageDim;
-		int col = size % ImageDim;
+		int row = size / NumTiles;
+		int col = size % NumTiles;
 		data[row][col] = tile;
 		++size;
 	}
 
 	bool tryReceiveInput(ImageTile&& tile)
 	{
-		int row = size / ImageDim;
-		int col = size % ImageDim;
+		int row = size / NumTiles;
+		int col = size % NumTiles;
 		if (checkFit(tile, row, col))
 		{
 			data[row][col] = tile;
@@ -228,6 +213,14 @@ struct ImageGrid
 			return true;
 		}
 		return false;
+	}
+
+	bool resetLastAction()
+	{
+		--size;
+		int row = size / NumTiles;
+		int col = size % NumTiles;
+		data[row][col] = ImageTile();
 	}
 
 	void generateMetaData()
@@ -250,6 +243,28 @@ struct ImageGrid
 		std::cout << "----------------------" << std::endl;
 	}
 
+	void printGridGraphically()
+	{
+		for (auto row = 0; row < NumTiles; ++row)
+		{
+			for (auto i = 0; i < TileDim; ++i)
+			{
+				for (auto col = 0; col < NumTiles; ++col)
+				{
+					auto num = row * NumTiles + col;
+					if (num < size)
+					{
+						std::cout << data[row][col].images[data[row][col].active_offset][i] << " ";
+					}
+				}
+				if(size)
+					std::cout << std::endl;
+			}
+			if (size)
+				std::cout << "------------------------------------------\n";
+		}
+	}
+
 	int size{ 0 };
 	std::vector<std::vector<ImageTile>> data;
 	ImageState state;
@@ -263,43 +278,37 @@ struct Image
 		grid.printGrid();
 	}
 
-	bool placeNextTile(ImageGrid layout)
+	bool placeNextTile(ImageGrid layout, int nesting_depth=0)
 	{
-		std::cout << "Place Tile called with " << layout.size << " elements in grid" << std::endl;
-		std::cout << layout.state << std::endl;
-		layout.printGrid();
-		getchar();
-		if (layout.size == (ImageDim * ImageDim))
+		if (layout.size == (NumTiles * NumTiles))
 		{
 			fitting_grid = layout;
 			return true;
 		}
-		for (auto row = 0; row < ImageDim; ++row)
+		for (auto row = 0; row < NumTiles; ++row)
 		{
-			for (auto col = 0; col < ImageDim; ++col)
+			for (auto col = 0; col < NumTiles; ++col)
 			{
-				int pos = row * ImageDim + col;
+				int pos = row * NumTiles + col;
 				if (!layout.state.test(pos))
 				{
-					std::cout << layout.state << " : tested at position: " << pos << std::endl;
 					// This tile has not been placed yet
 					for (auto perm = 0; perm < numPermTile; ++perm)
 					{
 						auto tile = grid.data[row][col];
-						tile.active_border_offset = perm;
+						tile.active_offset = perm;
 						if (layout.tryReceiveInput(std::move(tile)))
 						{
-							std::cout << "Test permutation " << perm << " for " << row << " | " << col << std::endl;
 							// Set state
 							layout.state.set(pos);
-							std::cout << "We set position: " << pos << std::endl;
 
 							// Try place next tile
-							if (placeNextTile(layout))
+							if (placeNextTile(layout, nesting_depth + 1))
 								return true;
 
 							// Did not work, reset state again
 							layout.state.reset(pos);
+							layout.resetLastAction();
 						}
 					}
 				}
@@ -315,21 +324,76 @@ struct Image
 		ImageGrid assembled_grid;
 		placeNextTile(assembled_grid);
 		std::cout << "Assemble grid done" << std::endl;
-		std::cout << fitting_grid.data[0][0].tile_ID << " | " << fitting_grid.data[0][ImageDim - 1].tile_ID << " | ";
-		std::cout << fitting_grid.data[ImageDim - 1][0].tile_ID << " | " << fitting_grid.data[ImageDim - 1][ImageDim - 1].tile_ID << std::endl;
+		fitting_grid.printGridGraphically();
+		std::cout << fitting_grid.data[0][0].tile_ID << " | " << fitting_grid.data[0][NumTiles - 1].tile_ID << " | ";
+		std::cout << fitting_grid.data[NumTiles - 1][0].tile_ID << " | " << fitting_grid.data[NumTiles - 1][NumTiles - 1].tile_ID << std::endl;
 	}
 
 	unsigned long long getCornerProduct()
 	{
 		return static_cast<unsigned long long>(fitting_grid.data[0][0].tile_ID)
-			* static_cast<unsigned long long>(fitting_grid.data[0][ImageDim - 1].tile_ID)
-			* static_cast<unsigned long long>(fitting_grid.data[ImageDim - 1][0].tile_ID)
-			* static_cast<unsigned long long>(fitting_grid.data[ImageDim - 1][ImageDim - 1].tile_ID);
+			* static_cast<unsigned long long>(fitting_grid.data[0][NumTiles - 1].tile_ID)
+			* static_cast<unsigned long long>(fitting_grid.data[NumTiles - 1][0].tile_ID)
+			* static_cast<unsigned long long>(fitting_grid.data[NumTiles - 1][NumTiles - 1].tile_ID);
 	}
 
 	// Members
 	ImageGrid grid;
 	ImageGrid fitting_grid;
+};
+
+struct FittedImage
+{
+	FittedImage()
+	{
+		for (auto i = 0; i < ImageSize; ++i)
+		{
+			image.push_back(std::move(ImageRow{}));
+		}
+	}
+
+	void constructDenseImage(const ImageGrid& grid)
+	{
+		for (auto row = 0; row < NumTiles; ++row)
+		{
+			for (auto col = 0; col < NumTiles; ++col)
+			{
+				auto& currentTile = grid.data[row][NumTiles - 1 - col].images[grid.data[row][NumTiles - 1 - col].active_offset];
+
+				for (auto i = 0; i < TileDim_nb; ++i)
+				{
+					for (auto j = 0; j < TileDim_nb; ++j)
+					{
+						image[row * TileDim_nb + i][col * TileDim_nb + j] = currentTile[1 + i][1 + j];
+					}
+				}
+			}
+		}
+		final_image = image;
+	}
+
+	void locateScaryMonster()
+	{
+		int num_monsters{ 0 };
+
+
+		std::cout << "Found " << num_monsters << " scary monsters!" << std::endl;
+	}
+
+	void printImage()
+	{
+		std::cout << "----------------------------\n";
+		for (auto& row : image)
+			std::cout << row << std::endl;
+		std::cout << "----------------------------\n";
+	}
+
+	std::vector<ImageRow> image;
+	std::vector<ImageRow> final_image;
+	static constexpr int monster_length{ 20 };
+	ImageRow monster_l1{ "00000000000000000010" };
+	ImageRow monster_l2{ "10000110000110000111" };
+	ImageRow monster_l3{ "10010010010010010000" };
 };
 
 int main()
@@ -352,7 +416,7 @@ int main()
 		{
 			if (line.empty())
 				break;
-			tile.data.push_back(std::move(ImageRow(line, 0, line.size(), '.', '#')));
+			tile.data.push_back(std::move(TileRow(line, 0, line.size(), '.', '#')));
 		}
 		image.grid.receiveInput(std::move(tile));
 	}
@@ -362,6 +426,12 @@ int main()
 	// Task 1
 	image.assembleImage();
 	std::cout << "Task 1: Result is: " << image.getCornerProduct() << std::endl;
+
+	// Task 2
+	FittedImage fitted_image;
+	fitted_image.constructDenseImage(image.fitting_grid);
+	fitted_image.printImage();
+	fitted_image.locateScaryMonster();
 
 	return 0;
 }

@@ -5,7 +5,7 @@
 #include <bitset>
 #include <map>
 
-static constexpr int NumTiles{ 3 };
+static constexpr int NumTiles{ 12 };
 
 static constexpr int TileDim{ 10 };
 static constexpr int TileDim_nb{ 8 };
@@ -352,6 +352,59 @@ struct FittedImage
 		}
 	}
 
+	std::vector<ImageRow> rotateImage(const std::vector<ImageRow>& incoming_image)
+	{
+		std::vector<ImageRow> new_image;
+		new_image.resize(incoming_image.size());
+		for (auto i = 0; i < ImageSize; ++i)
+		{
+			for (auto j = 0; j < ImageSize; ++j)
+			{
+				new_image[i][j] = incoming_image[j][ImageSize - 1 - i];
+			}
+		}
+		return new_image;
+	}
+
+	std::vector<ImageRow> rotateImageLeft(const std::vector<ImageRow>& incoming_image)
+	{
+		std::vector<ImageRow> new_image;
+		new_image.resize(incoming_image.size());
+		for (auto i = 0; i < ImageSize; ++i)
+		{
+			for (auto j = 0; j < ImageSize; ++j)
+			{
+				new_image[i][j] = incoming_image[ImageSize - 1 - j][i];
+			}
+		}
+		return new_image;
+	}
+
+	std::vector<ImageRow> flipImageHorizontal(const std::vector<ImageRow>& incoming_image)
+	{
+		std::vector<ImageRow> new_image;
+		new_image.resize(incoming_image.size());
+		for (auto i = 0; i < ImageSize; ++i)
+		{
+			new_image[i] = incoming_image[ImageSize - 1 - i];
+		}
+		return new_image;
+	}
+
+	std::vector<ImageRow> flipImageVertical(const std::vector<ImageRow>& incoming_image)
+	{
+		std::vector<ImageRow> new_image;
+		new_image.resize(incoming_image.size());
+		for (auto i = 0; i < ImageSize; ++i)
+		{
+			for (auto j = 0; j < ImageSize; ++j)
+			{
+				new_image[i][j] = incoming_image[i][ImageSize - 1 - j];
+			}
+		}
+		return new_image;
+	}
+
 	void constructDenseImage(const ImageGrid& grid)
 	{
 		for (auto row = 0; row < NumTiles; ++row)
@@ -369,15 +422,95 @@ struct FittedImage
 				}
 			}
 		}
-		final_image = image;
+		images.push_back(image);
+
+		// Rotate 90Deg
+		auto image_90 = rotateImage(image);
+		images.push_back(image_90);
+
+		// Rotate 180Deg
+		auto image_180 = rotateImage(image_90);
+		images.push_back(image_180);
+
+		// Rotate 270Deg
+		auto image_270 = rotateImage(image_180);
+		images.push_back(image_270);
+
+		// Flip horizontal
+		auto flip_hor = flipImageHorizontal(image);
+		images.push_back(flip_hor);
+
+		// Flip vertical
+		auto flip_vert = flipImageVertical(image);
+		images.push_back(flip_vert);
+
+		// Flip +45°
+		auto flip_plus_45 = rotateImageLeft(flip_hor);
+		images.push_back(flip_plus_45);
+
+		// Flip -45°
+		auto flip_minus_45 = rotateImage(flip_hor);
+		images.push_back(flip_minus_45);
+	}
+
+	int searchMonsterInImage(std::vector<ImageRow> search_image)
+	{
+		int num_monsters{ 0 };
+		for (auto row = 0; row <= (ImageSize - 3); ++row)
+		{
+			for (auto col = 0; col <= (ImageSize - monster_length); ++col)
+			{
+				// Shift mask to correct position
+				auto current_monster = monster;
+				for (auto& mask : current_monster)
+					mask <<= col;
+
+				bool found_monster{ true };
+				for (auto i = 0; i < current_monster.size(); ++i)
+				{
+					auto& curr_mask = current_monster[i];
+					if ((search_image[row + i] & curr_mask) != curr_mask)
+					{
+						found_monster = false;
+						break;
+					}
+				}
+
+				if (found_monster)
+				{
+					// Flush those bits in the final image
+					for (auto i = 0; i < current_monster.size(); ++i)
+					{
+						auto& curr_mask = current_monster[i];
+						curr_mask.flip();
+						search_image[row + i] &= curr_mask;
+					}
+					++num_monsters;
+				}
+			}
+		}
+		if (num_monsters)
+		{
+			final_image = search_image;
+		}
+		return num_monsters;
 	}
 
 	void locateScaryMonster()
 	{
-		int num_monsters{ 0 };
+		for (auto& single_image : images)
+		{
+			int num_monsters{ searchMonsterInImage(single_image) };
+			std::cout << "Found " << num_monsters << " scary monsters!" << std::endl;
+		}
+	}
 
-
-		std::cout << "Found " << num_monsters << " scary monsters!" << std::endl;
+	int countTheRaute(const std::vector<ImageRow>& search_image)
+	{
+		int ret_val{ 0 };
+		for (auto& row : search_image)
+			ret_val += row.count();
+		return ret_val;
 	}
 
 	void printImage()
@@ -389,17 +522,20 @@ struct FittedImage
 	}
 
 	std::vector<ImageRow> image;
+	std::vector<std::vector<ImageRow>> images;
 	std::vector<ImageRow> final_image;
 	static constexpr int monster_length{ 20 };
-	ImageRow monster_l1{ "00000000000000000010" };
-	ImageRow monster_l2{ "10000110000110000111" };
-	ImageRow monster_l3{ "10010010010010010000" };
+	std::vector<ImageRow> monster{
+		ImageRow{ "00000000000000000010" },
+		ImageRow{ "10000110000110000111" },
+		ImageRow{ "01001001001001001000" }
+	};
 };
 
 int main()
 {
 	std::cout << "Twentieth day of Advent code!" << std::endl;
-	std::fstream input("../../../data/20/input2.txt", std::ios_base::in);
+	std::fstream input("../../../data/20/input.txt", std::ios_base::in);
 	if (!input.is_open())
 	{
 		std::cout << "Could not open file!\n";
@@ -432,6 +568,8 @@ int main()
 	fitted_image.constructDenseImage(image.fitting_grid);
 	fitted_image.printImage();
 	fitted_image.locateScaryMonster();
+	std::cout << "Task 2: Result is: " << fitted_image.countTheRaute(fitted_image.image) << std::endl;
+	std::cout << "Task 2: Result is: " << fitted_image.countTheRaute(fitted_image.final_image) << std::endl;
 
 	return 0;
 }

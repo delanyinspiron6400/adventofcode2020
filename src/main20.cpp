@@ -6,10 +6,10 @@
 #include <map>
 
 static constexpr int TileDim{ 10 };
-static constexpr int ImageDim{ 12 };
+static constexpr int ImageDim{ 3 };
 static constexpr int numPermTile{ 16 };
 using ImageRow = std::bitset<TileDim>;
-using ImageState = std::bitset< ImageDim* ImageDim>;
+using ImageState = std::bitset< ImageDim * ImageDim>;
 
 enum class BorderLoc : int
 {
@@ -184,7 +184,7 @@ struct ImageGrid
 		for (auto i = 0; i < ImageDim; ++i)
 		{
 			std::vector<ImageTile> tiles;
-			tiles.reserve(ImageDim);
+			tiles.resize(ImageDim);
 			data.push_back(std::move(tiles));
 		}
 	}
@@ -232,13 +232,27 @@ struct ImageGrid
 
 	void generateMetaData()
 	{
+		std::cout << "Generate Grid MetaData" << std::endl;
 		for (auto& row : data)
 			for (auto& tile : row)
 				tile.generateMetaData();
 	}
 
+	void printGrid()
+	{
+		std::cout << "----------------------" << std::endl;
+		for (auto& row : data)
+		{
+			for (auto& tile : row)
+				std::cout << " | " << tile.tile_ID;
+			std::cout << " |" << std::endl;
+		}
+		std::cout << "----------------------" << std::endl;
+	}
+
 	int size{ 0 };
 	std::vector<std::vector<ImageTile>> data;
+	ImageState state;
 };
 
 struct Image
@@ -246,10 +260,15 @@ struct Image
 	void generateMetaData()
 	{
 		grid.generateMetaData();
+		grid.printGrid();
 	}
 
-	bool placeNextTile(ImageGrid layout, ImageState state)
+	bool placeNextTile(ImageGrid layout)
 	{
+		std::cout << "Place Tile called with " << layout.size << " elements in grid" << std::endl;
+		std::cout << layout.state << std::endl;
+		layout.printGrid();
+		getchar();
 		if (layout.size == (ImageDim * ImageDim))
 		{
 			fitting_grid = layout;
@@ -259,8 +278,10 @@ struct Image
 		{
 			for (auto col = 0; col < ImageDim; ++col)
 			{
-				if (!state.test(row * ImageDim + col))
+				int pos = row * ImageDim + col;
+				if (!layout.state.test(pos))
 				{
+					std::cout << layout.state << " : tested at position: " << pos << std::endl;
 					// This tile has not been placed yet
 					for (auto perm = 0; perm < numPermTile; ++perm)
 					{
@@ -268,9 +289,17 @@ struct Image
 						tile.active_border_offset = perm;
 						if (layout.tryReceiveInput(std::move(tile)))
 						{
-							state.set(row * ImageDim + col);
-							if (placeNextTile(layout, state))
+							std::cout << "Test permutation " << perm << " for " << row << " | " << col << std::endl;
+							// Set state
+							layout.state.set(pos);
+							std::cout << "We set position: " << pos << std::endl;
+
+							// Try place next tile
+							if (placeNextTile(layout))
 								return true;
+
+							// Did not work, reset state again
+							layout.state.reset(pos);
 						}
 					}
 				}
@@ -281,10 +310,11 @@ struct Image
 
 	void assembleImage()
 	{
+		std::cout << "Start assembling the grid" << std::endl;
 		// Place each Tile first in the top-left corner
 		ImageGrid assembled_grid;
-		ImageState state;
-		placeNextTile(assembled_grid, state);
+		placeNextTile(assembled_grid);
+		std::cout << "Assemble grid done" << std::endl;
 		std::cout << fitting_grid.data[0][0].tile_ID << " | " << fitting_grid.data[0][ImageDim - 1].tile_ID << " | ";
 		std::cout << fitting_grid.data[ImageDim - 1][0].tile_ID << " | " << fitting_grid.data[ImageDim - 1][ImageDim - 1].tile_ID << std::endl;
 	}

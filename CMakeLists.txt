@@ -227,5 +227,15 @@ else()
    target_compile_options(main_21 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
 endif()
 
-set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11 main_12 main_13 main_14 main_15 main_16 main_17 main_18 main_19 main_20 main_21
+##########################################################################
+# Day 22
+add_executable(main_22
+ src/main22.cpp)
+if (MSVC)
+   target_compile_options(main_22 PRIVATE /W4 $<$<CONFIG:RELEASE>:/O2> $<$<CONFIG:DEBUG>:/Od>)
+else()
+   target_compile_options(main_22 PRIVATE -Wall -Wextra -Werror $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:DEBUG>:-O0>)
+endif()
+
+set_target_properties(main_01 main_02 main_03 main_04 main_05 main_06 main_07 main_08 main_09 main_10 main_11 main_12 main_13 main_14 main_15 main_16 main_17 main_18 main_19 main_20 main_21 main_22
                       PROPERTIES CXX_STANDARD 20)

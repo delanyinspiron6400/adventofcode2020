@@ -99,16 +99,21 @@ void task1()
 
 void task2()
 {
-	std::vector<int> current_game{ 2,1,9,7,4,8,3,6,5 };
+	std::list<int> current_game{ 2,1,9,7,4,8,3,6,5 };
 	//std::map<int, int> mapping;
 	//std::vector<int> current_game{ 3,8,9,1,2,5,4,6,7 };
 	for (auto i = 10; i <= num_elements; ++i)
 		current_game.push_back(i);
-	//for (auto i = 0; i < num_elements; ++i)
-	//{
-	//	mapping[current_game[i]] = i;
-	//}
-	std::vector<int> side_list;
+	std::vector<int*> map;
+	map.resize(current_game.size());
+	auto it = current_game.begin();
+	for (auto i = 0; i < num_elements; ++i)
+	{
+		map[*it++] = &*it;
+	}
+	std::list<int> side_list;
+
+	std::cout << *map[0] << *map[1] << std::endl;
 
 	auto curr_element_pos{ 0 };
 	auto curr_element = current_game.front();
@@ -165,10 +170,10 @@ void task2()
 
 		// --------------------------------------------------
 		// Find destination
-		while ((destination_iter = std::find(current_game.begin(), current_game.end(), destination_element)) == current_game.end())
-		{
-			destination_element = (destination_element == 0) ? num_elements : destination_element - 1;
-		}
+		//while ((destination_iter = std::find(current_game.begin(), current_game.end(), destination_element)) == current_game.end())
+		//{
+		//	destination_element = (destination_element == 0) ? num_elements : destination_element - 1;
+		//}
 
 		//std::cout << "destination: " << *destination_iter << std::endl;
 		//getchar();
@@ -184,7 +189,8 @@ void task2()
 
 		// --------------------------------------------------
 		// Select next curr_element_pos
-		auto curr_element_iter{ std::find(current_game.begin(), current_game.end(), curr_element) };
+		/*auto curr_element_iter{ std::find(current_game.begin(), current_game.end(), curr_element) };*/
+		auto curr_element_iter{current_game.begin() };
 		std::advance(curr_element_iter, 1);
 		if (curr_element_iter == current_game.end())
 			curr_element_iter = current_game.begin();

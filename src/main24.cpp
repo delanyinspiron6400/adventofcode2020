@@ -4,6 +4,9 @@
 #include <string>
 #include <array>
 
+static constexpr int num_tiles{50000};
+static constexpr int num_rounds{ 100 };
+
 enum class Direction : int
 {
 	EAST = 0,
@@ -81,6 +84,18 @@ struct Tile
 		colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 	}
 
+	std::vector<Position> generateNeighbours()
+	{
+		std::vector<Position> positions;
+		positions.push_back(std::move(Position{pos.x + 1, pos.y + 1}));
+		positions.push_back(std::move(Position{ pos.x + 2, pos.y }));
+		positions.push_back(std::move(Position{ pos.x + 1, pos.y - 1 }));
+		positions.push_back(std::move(Position{ pos.x - 1, pos.y - 1 }));
+		positions.push_back(std::move(Position{ pos.x - 2, pos.y}));
+		positions.push_back(std::move(Position{ pos.x - 1, pos.y + 1 }));
+		return positions;
+	}
+
 	Tile(Position pos, Colour col = Colour::BLACK) : Tile() { this->pos = pos; this->colour = col; }
 	Position pos;
 	Colour colour{ Colour::WHITE };
@@ -118,6 +133,66 @@ struct Tiles
 				++num_black_tiles;
 		}
 		return num_black_tiles;
+	}
+
+	void generatePerimeter()
+	{
+		auto current_size = tile_mapping.size();
+		for (auto i = 0; i < current_size; ++i)
+		{
+			auto& current_tile = tile_mapping[i];
+			if (current_tile.colour == Colour::WHITE)
+				continue;
+			auto neighbours = current_tile.generateNeighbours();
+			for (auto& neighbour : neighbours)
+			{
+				bool alreadyIn{ false };
+				for (auto& tile : tile_mapping)
+				{
+					if (tile.pos == neighbour)
+					{
+						alreadyIn = true;
+						break;
+					}
+				}
+				if (!alreadyIn)
+				{
+					tile_mapping.push_back(std::move(Tile{ neighbour, Colour::WHITE }));
+				}
+			}
+		}
+	}
+
+	void flipTiles(Tiles& next_tiles)
+	{
+		auto& next_mapping = next_tiles.tile_mapping;
+		for (auto i = 0; i < tile_mapping.size(); ++i)
+		{
+			auto neighbours = tile_mapping[i].generateNeighbours();
+			int black_neighbours{ 0 };
+			for (auto& neighbour : neighbours)
+			{
+				for (auto& tile : tile_mapping)
+				{
+					if (neighbour == tile.pos)
+					{
+						if (tile.colour == Colour::BLACK)
+							++black_neighbours;
+						break;
+					}
+				}
+			}
+			if (tile_mapping[i].colour == Colour::BLACK)
+			{
+				if (black_neighbours == 0 || black_neighbours > 2)
+					next_mapping[i].flipColour();
+			}
+			else
+			{
+				if(black_neighbours == 2)
+					next_mapping[i].flipColour();
+			}
+		}
 	}
 
 	std::vector<Tile> tile_mapping;
@@ -185,6 +260,18 @@ int main()
 		tiles.receiveTile(position);
 	}
 	std::cout << "Task 1: Num Black tiles is " << tiles.countBlackTiles() << std::endl;
+
+	// Task 2
+	Tiles next_tiles;
+	for (auto i = 0; i < num_rounds; ++i)
+	{
+		tiles.generatePerimeter();
+		next_tiles = tiles;
+		tiles.flipTiles(next_tiles);
+		std::swap(tiles, next_tiles);
+		tiles.countBlackTiles();
+		std::cout << i << ": Task 2: Num Black tiles is " << tiles.countBlackTiles() << std::endl;
+	}
 
 	return 0;
 }
